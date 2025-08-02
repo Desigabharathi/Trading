@@ -7,6 +7,7 @@ import datetime
 st.set_page_config(layout="wide")
 st.title("📊 Relative Strength Analysis: Sectors vs NIFTY 50")
 
+# ✅ Correct: Plain dictionary
 sector_symbols = {
     "IT": "^CNXIT",
     "BANK": "^NSEBANK",
@@ -25,6 +26,7 @@ end_date = datetime.date.today()
 start_date = end_date - datetime.timedelta(days=lookback_days)
 st.sidebar.markdown(f"**From:** {start_date}  \n**To:** {end_date}")
 
+# ✅ Updated fetch function to ensure clean DataFrame
 @st.cache_data
 def fetch_price_data(symbols, start, end):
     df_list = []
@@ -36,14 +38,12 @@ def fetch_price_data(symbols, start, end):
             df_list.append(df)
 
     if not df_list:
-        st.error("❌ No data could be fetched from Yahoo Finance.")
+        st.error("❌ No data could be fetched. Check Yahoo Finance symbols or internet access.")
         return pd.DataFrame()
 
-    # Merge all dataframes on date index
-    combined_df = pd.concat(df_list, axis=1)
-    return combined_df
+    return pd.concat(df_list, axis=1)
 
-
+# ✅ Fetch data
 st.info("📡 Fetching data from Yahoo Finance...")
 data = fetch_price_data(sector_symbols, start_date, end_date)
 
@@ -51,16 +51,19 @@ if data.empty or "NIFTY_50" not in data.columns:
     st.error("❌ Failed to load NIFTY or sector data.")
     st.stop()
 
+# ✅ Calculate RS
 rs_df = data.drop(columns=["NIFTY_50"]).div(data["NIFTY_50"], axis=0)
 
 st.subheader("📈 Relative Strength Trend (Sector / NIFTY)")
-st.line_chart(rs_df)
+st.line_chart(rs_df)  # ✅ Valid format
 
+# ✅ Show RS % change
 st.subheader(f"🏆 RS % Change over {lookback_days} Days")
 rs_change = rs_df.iloc[-1] / rs_df.iloc[0] - 1
 rs_change = rs_change.sort_values(ascending=False)
 st.dataframe(rs_change.map(lambda x: f"{x:.2%}"))
 
+# ✅ Highlight outperformers
 st.subheader("✅ Outperforming Sectors")
 outperformers = rs_change[rs_change > 0]
 if not outperformers.empty:
@@ -68,6 +71,7 @@ if not outperformers.empty:
 else:
     st.info("No sectors are currently outperforming NIFTY in this period.")
 
+# ✅ Allow CSV export
 st.download_button(
     label="📥 Download RS Summary as CSV",
     data=rs_change.to_csv().encode("utf-8"),
