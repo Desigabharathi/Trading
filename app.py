@@ -27,18 +27,22 @@ st.sidebar.markdown(f"**From:** {start_date}  \n**To:** {end_date}")
 
 @st.cache_data
 def fetch_price_data(symbols, start, end):
-    price_data = {}
+    df_list = []
+
     for name, symbol in symbols.items():
         df = yf.download(symbol, start=start, end=end)
-        st.write(f"Fetched {symbol}: {len(df)} rows")  # Optional debug log
         if not df.empty:
-            price_data[name] = df["Close"]
+            df = df[['Close']].rename(columns={'Close': name})
+            df_list.append(df)
 
-    if not price_data:
-        st.error("❌ No data could be fetched. Check Yahoo Finance symbols or internet access.")
-        return pd.DataFrame()  # Return safe empty DataFrame
+    if not df_list:
+        st.error("❌ No data could be fetched from Yahoo Finance.")
+        return pd.DataFrame()
 
-    return pd.DataFrame(price_data)
+    # Merge all dataframes on date index
+    combined_df = pd.concat(df_list, axis=1)
+    return combined_df
+
 
 st.info("📡 Fetching data from Yahoo Finance...")
 data = fetch_price_data(sector_symbols, start_date, end_date)
