@@ -30,8 +30,14 @@ def fetch_price_data(symbols, start, end):
     price_data = {}
     for name, symbol in symbols.items():
         df = yf.download(symbol, start=start, end=end)
+        st.write(f"Fetched {symbol}: {len(df)} rows")  # Optional debug log
         if not df.empty:
             price_data[name] = df["Close"]
+
+    if not price_data:
+        st.error("❌ No data could be fetched. Check Yahoo Finance symbols or internet access.")
+        return pd.DataFrame()  # Return safe empty DataFrame
+
     return pd.DataFrame(price_data)
 
 st.info("📡 Fetching data from Yahoo Finance...")
